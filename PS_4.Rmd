@@ -33,7 +33,10 @@ col_types =  cols(
 
 ```{r, echo=FALSE} 
 # grouping by responses then turning the rows into columns to more easily access the values using the pull function
-x<-poll_data %>% group_by(response)%>%count()%>% spread(key = response, value = n)
+x<-poll_data %>% 
+  group_by(response)%>%
+  count()%>%
+  spread(key = response, value = n)
 
 
 ML1<- x %>%
@@ -41,13 +44,21 @@ ML1<- x %>%
 
 ML2<-x$Rep - x$Und
 
-ML3<-poll_data %>% filter(gender != gender_combined) %>% tally()
+ML3<-poll_data %>% 
+  filter(gender != gender_combined) %>% tally()
 
 #I have gotten two answers for this question depending if I filter out 3rd parties. Right now I did not filter out third parties at got 28; however when I do filter them out the answer is 27.
-ML4 <-poll_data %>% filter(race_eth == "White" & file_race_black != "White")%>% tally()
+ML4 <-poll_data %>% 
+  filter(race_eth == "White" & file_race_black != "White")%>% 
+  tally()
 
 #Dem response came before repubiclans first response, I changed the ML to say "Rep came 11 minutes after (used to say before) the first response for Dem"
-ML5<-poll_data%>% filter(response %in% c("Dem", "Rep"))%>% group_by(response)%>% select(response, timestamp) %>% summarize(first = min(timestamp)) %>% summarize(diff = round(first[2]- first[1]))
+ML5<-poll_data%>% 
+  filter(response %in% c("Dem", "Rep"))%>% 
+  group_by(response)%>% 
+  select(response, timestamp) %>% 
+  summarize(first = min(timestamp)) %>% 
+  summarize(diff = round(first[2]- first[1]))
 
 
 
@@ -161,7 +172,7 @@ Q3 <- poll_data %>%
 ##Question 4
 ```{r, echo=FALSE, fig.width=7.2}
 poll_data %>%
-  #cleaning data
+  #cleaning data, I only want to compare those that are decided, thus I only keep Democratic and Republican responses 
   filter(!is.na(response),file_race != "[DO NOT READ] Don't know/Refused",response %in% c("Dem", "Rep"),ager != "[DO NOT READ] Refused") %>%
   #the order of the groupings matters, the way I have grouped them is to show how each gender for each age range.
   group_by(gender, ager , response) %>%
