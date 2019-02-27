@@ -43,8 +43,10 @@ ML2<-x$Rep - x$Und
 
 ML3<-poll_data %>% filter(gender != gender_combined) %>% tally()
 
+#I have gotten two answers for this question depending if I filter out 3rd parties. Right now I did not filter out third parties at got 28; however when I do filter them out the answer is 27.
 ML4 <-poll_data %>% filter(race_eth == "White" & file_race_black != "White")%>% tally()
 
+#Dem response came before repubiclans first response, I changed the ML to say "Rep came 11 minutes after (used to say before) the first response for Dem"
 ML5<-poll_data%>% filter(response %in% c("Dem", "Rep"))%>% group_by(response)%>% select(response, timestamp) %>% summarize(first = min(timestamp)) %>% summarize(diff = round(first[2]- first[1]))
 
 
@@ -62,7 +64,7 @@ There are two gender variables (gender and gender_combined). There are `r ML3` i
 
 There are `r ML4` respondents listed as “White” under race_eth who are not listed as “White” under file_race_black.
 
-The first response of Rep came `r ML5` minutes (rounded to the nearest minute) before the first response of Dem.
+The first response of Rep came `r ML5` minutes (rounded to the nearest minute) after the first response of Dem.
 
 
 ## Question 2
@@ -72,7 +74,7 @@ The first response of Rep came `r ML5` minutes (rounded to the nearest minute) b
 z <-
   #filtering to remove the don't know/refused because they change the percentages and create a new row of data in the end table. 
   poll_data %>%  filter(!is.na(response), race_eth != "[DO NOT READ] Don't know/Refused") %>%
-  # it is not intuitive to r which should be displayed first because they are factor variables, thus I changed the order to match the example fram. 
+  # it is not intuitive to r which should be displayed first because they are factor variables, thus I changed the order to match the example table 
   mutate(race_eth = fct_relevel(race_eth, c(
   "White", "Black", "Hispanic", "Asian", "Other"
   ))) %>%
@@ -93,19 +95,22 @@ z <-
   select(race_eth, Dem, Rep, Und) %>%
   #turns values that are 0 into NA because there are no Asians that are undecided
   na_if(0) %>%
+  #avoiding any potential errors from the groupings I made before
   ungroup() %>%
   gt() %>%
-  #gives credit to where the data comes from 
+  tab_header("Demographics of North Carolina’s 9th Congressional District") %>%
+  #crediting the source of the data
   tab_source_note("New York Times Upshot/Siena College 2018 live polls") %>%
-  tab_header("Polling Results in North Carolina’s 9th Congressional District") %>%
   cols_label(
-  race_eth = "Race",
+  race_eth = "Ethnicity",
   Dem = "DEM.",
   Rep = "REP.",
   Und = "UND."
   ) %>%
   # rounds and cleans up the percentages to make the table nicer and resemble example table more.
-  fmt_percent(columns = vars(Dem, Rep, Und), decimals = 0)
+  fmt_percent(columns = vars(Dem, Rep, Und), decimals = 0)%>%
+  # changes the 0 in Und Asians box to a -
+  fmt_missing(columns = vars(Und), rows =4) 
   
   z
 
@@ -114,7 +119,7 @@ z <-
 
 ##Question 3
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.width = 7.2}
 
 Q3 <- poll_data %>%
   filter(!is.na(response), educ != "[DO NOT READ] Refused") %>%
@@ -151,15 +156,34 @@ Q3 <- poll_data %>%
 
 ```
 
- response, ager, educ, file_race, gender, party_id, phone_type, genballot, and timestamp
+
 
 ##Question 4
-```{r}
-poll_data%>%
-  filter(!is.na(response), race_eth != "[DO NOT READ] Don't know/Refused", response %in% c("Dem","Rep", "Und"), ager != "[DO NOT READ] Refused")%>%
-  ggplot(aes(x=file_race, y = response, fill = gender)) + geom_col() 
-
+```{r, echo=FALSE, fig.width=7.2}
+poll_data %>%
+  #cleaning data
+  filter(!is.na(response),file_race != "[DO NOT READ] Don't know/Refused",response %in% c("Dem", "Rep"),ager != "[DO NOT READ] Refused") %>%
+  #the order of the groupings matters, the way I have grouped them is to show how each gender for each age range.
+  group_by(gender, ager , response) %>%
+  summarise(N = n()) %>%
+  #turning into a percentage to be able to graph categorical data
+  mutate(freq = N / sum(N) , pct = round((freq * 100) , 0)) %>%
+  ggplot(aes(x = ager, y = pct, fill = gender)) + geom_col(position = "dodge2") +
+  #facet wrap to compare the parties
+  facet_wrap( ~ response) + labs(
+  y = "Percentage of Vote by Gender per Age Range",
+  title = "Gender's Vote Differently in NC 9th",
+  subtitle = "Dems Win Every Female Age Range While Reps Win Every Male Age Range",
+  x = "Age Range",
+  caption = "New York Times Upshot/Siena College 2018 live polls"
+  )
+  
 
 
 
 ```
+
+
+##Colleagues
+Baeu M, Chris O, Chris M, Debora G
+
